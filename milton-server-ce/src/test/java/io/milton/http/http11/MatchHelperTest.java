@@ -1,23 +1,24 @@
 /*
- * Copyright (C) 2012 McEvoy Software Ltd
+ * Copyright 2014 McEvoy Software Ltd.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 package io.milton.http.http11;
 
 import io.milton.http.Request;
 import io.milton.resource.Resource;
+import static junit.framework.Assert.assertFalse;
 import junit.framework.TestCase;
 
 import static org.easymock.classextension.EasyMock.*;
@@ -66,12 +67,23 @@ public class MatchHelperTest extends TestCase {
 	public void testCheckIfMatch_DoesMatch_Star_NullResource() {
 		expect(request.getIfMatchHeader()).andReturn("*");
 		replay(resource, request);
+
 		boolean result = matchHelper.checkIfMatch(null, request);
 		verify(resource, request);
 		assertFalse(result);
 	}
-	
-	
+
+	public void testCheckIfMatch_DoesMatch_NoHeader_NullResource() {
+		expect(request.getIfMatchHeader()).andReturn(null);
+		replay(resource, request);
+
+		boolean result = matchHelper.checkIfMatch(null, request);
+		verify(resource, request);
+		assertTrue(result); // all good, continue
+	}
+
+
+
 	public void testCheckIfMatch_DoesMatch_MultiValues() {
 		expect(resource.getUniqueId()).andReturn("X");
 		expect(request.getIfMatchHeader()).andReturn("X, Y");
@@ -92,6 +104,7 @@ public class MatchHelperTest extends TestCase {
 
 	public void testCheckIfMatch_NullRequest() {
 		expect(request.getIfMatchHeader()).andReturn(null);
+		expect(request.getIfHeader()).andReturn(null);
 		replay(request);
 		boolean result = matchHelper.checkIfMatch(resource, request);
 		verify(request);
@@ -107,7 +120,7 @@ public class MatchHelperTest extends TestCase {
 		assertFalse(result);
 	}
 
-//********	
+//********
 	public void testCheckIfNoneMatch_DoesNotMatch_SingleValue() {
 		expect(resource.getUniqueId()).andReturn("X");
 		expect(request.getIfNoneMatchHeader()).andReturn("Y");
@@ -173,16 +186,16 @@ public class MatchHelperTest extends TestCase {
 		verify(resource, request);
 		assertFalse(result);
 	}
-	
-	
-	public void test_CheckIfRange_NoHeader() {	
+
+
+	public void test_CheckIfRange_NoHeader() {
 		expect(request.getIfRangeHeader() ).andReturn(null);
 		replay(resource, request);
 		boolean result = matchHelper.checkIfRange(resource, request);
 		verify(resource, request);
 		assertTrue(result);
-	}	
-	
+	}
+
 	public void test_CheckIfRange_Matches() {
 		expect(resource.getUniqueId()).andReturn("X");
 		expect(request.getIfRangeHeader() ).andReturn("X");
@@ -190,8 +203,8 @@ public class MatchHelperTest extends TestCase {
 		boolean result = matchHelper.checkIfRange(resource, request);
 		verify(resource, request);
 		assertTrue(result);
-	}		
-	
+	}
+
 	public void test_CheckIfRange_NotMatches() {
 		expect(resource.getUniqueId()).andReturn("X");
 		expect(request.getIfRangeHeader() ).andReturn("Y");
@@ -199,5 +212,5 @@ public class MatchHelperTest extends TestCase {
 		boolean result = matchHelper.checkIfRange(resource, request);
 		verify(resource, request);
 		assertFalse(result);
-	}		
+	}
 }

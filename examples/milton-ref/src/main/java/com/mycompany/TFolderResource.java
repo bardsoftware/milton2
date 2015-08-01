@@ -19,21 +19,27 @@
 package com.mycompany;
 
 import io.milton.common.StreamUtils;
+import io.milton.http.Auth;
+import io.milton.http.HttpManager;
 import io.milton.http.Range;
 import io.milton.http.Request;
-import io.milton.http.annotated.CommonResource;
+import io.milton.http.Request.Method;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.http.http11.auth.OAuth2Helper;
+import io.milton.principal.CalDavPrincipal;
 import io.milton.resource.CollectionResource;
 import io.milton.resource.MakeCalendarResource;
 import io.milton.resource.MakeCollectionableResource;
+import io.milton.resource.OAuth2Provider;
 import io.milton.resource.PutableResource;
 import io.milton.resource.Resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -112,15 +118,35 @@ public class TFolderResource extends TResource implements PutableResource, MakeC
     }
 
     @Override
-    public void sendContent(OutputStream out, Range range, Map<String, String> params, String contentType) throws IOException, NotAuthorizedException, BadRequestException {
+    public void sendContent(OutputStream out, Range range, Map<String, String> params, String contentType) throws IOException, NotAuthorizedException, BadRequestException, MalformedURLException {
+        // HEY EVERYONE
+        // This is just a really simple dumb example of generating content - 
+        // you CAN use JSPs and templates and stuff!!
         PrintWriter pw = new PrintWriter(out);
         pw.print("<html><body>");
         pw.print("<h1>" + this.getName() + "</h1>");
+        Request req = HttpManager.request();
         pw.print("<p>" + this.getClass().getCanonicalName() + "</p>");
+        CalDavPrincipal curUser = null;
+        if (HttpManager.request().getAuthorization() != null) {
+            curUser = (CalDavPrincipal) HttpManager.request().getAuthorization().getTag();
+        }
+        if (curUser == null) {
+            generateOAuthLoginLinks(pw);
+        } else {
+            pw.print("<h2>Logged in as: " + curUser.getName() + "</h2>");
+        }
         doBody(pw);
         pw.print("</body>");
         pw.print("</html>");
         pw.flush();
+    }
+
+    private void generateOAuthLoginLinks(PrintWriter pw) {
+        for (OAuth2Provider prov : getOAuth2Providers().values()) {
+            String url = OAuth2Helper.getOAuth2URL(prov).toString();
+            pw.print("<li><a href='" + url + "'>Login with OAuth2 on " + prov.getProviderId() +"</a></li>");
+        }
     }
 
     protected void doBody(PrintWriter pw) {
@@ -143,12 +169,12 @@ public class TFolderResource extends TResource implements PutableResource, MakeC
 
     public String getCTag() {
         Date d = getMostRecentModDate();
-        if( d == null ) {
+        if (d == null) {
             System.out.println("No ctag");
             return "000";
         } else {
-            
-            String s = d.getTime() + "t";                    
+
+            String s = d.getTime() + "t";
             System.out.println("ctag=" + s);
             return s;
         }
@@ -176,4 +202,18 @@ public class TFolderResource extends TResource implements PutableResource, MakeC
         TCalendarResource cal = new TCalendarResource(this, newName);
         return cal;
     }
+
+    @Override
+    public boolean authorise(Request request, Request.Method method, Auth auth) {
+        // allow GET to the root folder
+        if (parent == null && request.getMethod().equals(Method.GET)) {
+            return true;
+        }
+        return super.authorise(request, method, auth); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Long getMaxAgeSeconds(Auth auth) {
+        return null; // prevent caching of GET responses for web ui
+    }    
 }

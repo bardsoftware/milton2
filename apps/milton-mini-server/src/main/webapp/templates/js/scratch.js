@@ -1,27 +1,22 @@
-{
-    "data":{
-        "data":[
-            {"date":1397649600000, "value":10}, 
-            {"date":1398254400000, "value":3}, 
-            {"date":1398340800000, "value":2}], 
-        "graphType":"Line", 
-        "itemFields":["item", "count"], 
-        "items":[
-            {"count":3, "item":"/websites/w1/version1/programs/ff/ff/ff1/"}, 
-            {"count":3, "item":"/programs/ff/ff/ff1/"}, 
-            {"count":2, "item":"/_postSearch"}, 
-            {"count":2, "item":"/websites/w1/version1/programs/p1/c1/"}, 
-            {"count":1, "item":"/websites/w1/version1/programs/p1/c1/m1/"}, 
-            {"count":1, "item":"/websites/w1/version1/programs/ff/ff/"}, 
-            {"count":1, "item":"/websites/"}, 
-            {"count":1, "item":"/websites/w1/version1/programs/ff/ff/ff1/index.html"}, 
-            {"count":1, "item":"/reporting/"}], 
-        "itemsTitle":"", 
-        "labels":["Hits"], 
-        "xkey":"date", 
-        "ykeys":["value"]}, 
-    "fieldMessages":[], 
-    "messages":[], 
-    "nextHref":"", 
-    "status":true
+var a = {
+    "fields":[
+        "firstName","lastName","occupation","companyName","industries","hardSkills","softSkills","comments","salaryLow"
+    ],
+    "query":{
+        "filtered":{
+            "query":{
+                "match_all":{}
+            },
+            "filter":{
+                "and":{
+                    "filters":[
+                        {"terms":{
+                                "projects":["test"]}
+                        },
+                        {"terms":{
+                                "industry":["11 AFF Agriculture Forestry and Fishing"]
+                            }}]}}}},
+    "aggregations":{"genderBar":{"terms":{"field":"customText3"}},"industryBar":{"terms":{"field":"industries"}},"locationBar":{"terms":{"field":"customText20"}},"salaryBar":{"range":{"field":"salaryLow","ranges":[{"to":50000,"key":"Under 50k"},{"from":50000,"to":75000,"key":"50-75k"},{"from":75000,"to":100000,"key":"75-100k"},{"from":100000,"to":150000,"key":"100-150k"},{"from":150000,"to":200000,"key":"150-200k"},{"from":200000,"key":"Over 200k"}]}},"maxSalary":{"max":{"field":"salaryLow"}},"minSalary":{"min":{"field":"salaryLow"}
+        }
+    }
 }

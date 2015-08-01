@@ -49,6 +49,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class DefaultHttp11ResponseHandler implements Http11ResponseHandler, Bufferable {
+
 	private static final Logger log = LoggerFactory.getLogger(DefaultHttp11ResponseHandler.class);
 	private static final String miltonVerson;
 
@@ -68,7 +69,7 @@ public class DefaultHttp11ResponseHandler implements Http11ResponseHandler, Buff
 		never,
 		whenNeeded
 	}
-	
+
 	private final AuthenticationService authenticationService;
 	private final ETagGenerator eTagGenerator;
 	private final ContentGenerator contentGenerator;
@@ -123,13 +124,13 @@ public class DefaultHttp11ResponseHandler implements Http11ResponseHandler, Buff
 		} else {
 			Auth auth = request.getAuthorization();
 			if (auth == null || auth.getTag() == null) {
-				log.info("respondUnauthorised: no authenticated user, so return staus: " + Response.Status.SC_UNAUTHORIZED);
+				log.info("respondUnauthorised: no authenticated user, so return status: " + Response.Status.SC_UNAUTHORIZED);
 				response.setStatus(Response.Status.SC_UNAUTHORIZED);
 				List<String> challenges = authenticationService.getChallenges(resource, request);
 				response.setAuthenticateHeader(challenges);
 
 			} else {
-				log.info("respondUnauthorised: request has an authenticated user, so return staus: " + Response.Status.SC_FORBIDDEN);
+				log.info("respondUnauthorised: request has an authenticated user, so return status: " + Response.Status.SC_FORBIDDEN);
 				response.setStatus(Response.Status.SC_FORBIDDEN);
 
 			}
@@ -215,7 +216,14 @@ public class DefaultHttp11ResponseHandler implements Http11ResponseHandler, Buff
 				fn = -1;
 			}
 		} else {
-			fn = range.getFinish();
+			if (cl != null && cl < range.getFinish()) {
+				fn = cl - 1;
+			} else if (cl == null) {
+				log.warn("Couldnt calculate range end position because the resource is not reporting a content length, and no end position was requested by the client: " + resource.getName() + " - " + resource.getClass());
+				fn = -1;
+			} else {
+				fn = range.getFinish();
+			}
 		}
 		response.setContentRangeHeader(st, fn, cl);
 		long contentLength = fn - st + 1;
@@ -232,8 +240,6 @@ public class DefaultHttp11ResponseHandler implements Http11ResponseHandler, Buff
 		response.setContentLengthHeader(contentLength);
 		response.setEntity(new GetableResourceEntity(resource, range, params, null));
 	}
-
-	
 
 	/**
 	 * Send a partial content response with multiple ranges
@@ -508,5 +514,5 @@ public class DefaultHttp11ResponseHandler implements Http11ResponseHandler, Buff
 
 	public void setMultipartBoundary(String multipartBoundary) {
 		this.multipartBoundary = multipartBoundary;
-	}		
+	}
 }

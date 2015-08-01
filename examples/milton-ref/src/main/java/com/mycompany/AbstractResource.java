@@ -24,9 +24,12 @@ import io.milton.http.Request.Method;
 import io.milton.http.http11.auth.DigestGenerator;
 import io.milton.http.http11.auth.DigestResponse;
 import io.milton.resource.DigestResource;
+import io.milton.resource.OAuth2Provider;
+import io.milton.resource.OAuth2Resource;
 import io.milton.resource.ReportableResource;
 import io.milton.resource.Resource;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -34,7 +37,7 @@ import java.util.UUID;
  *
  * @author alex
  */
-public class AbstractResource implements Resource, ReportableResource, DigestResource {
+public class AbstractResource implements Resource, ReportableResource, DigestResource, OAuth2Resource {
 
     private static org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(AbstractResource.class);
     protected UUID id;
@@ -98,7 +101,22 @@ public class AbstractResource implements Resource, ReportableResource, DigestRes
             log.warn("user not found: " + digestRequest.getUser() + " - try 'userA'");
         }
         return null;
+    }
 
+    @Override
+    public Object authenticate(OAuth2ProfileDetails profile) {
+        String profileId = getFirstOf(profile.getDetails(), "username", "user_id", "id");
+        if (profileId != null) {
+            TCalDavPrincipal user = TResourceFactory.getUser(profileId);
+            if (user == null) {
+                log.warn("Registering new user " + profileId);
+                user = TResourceFactory.addUser(TResourceFactory.principals, profileId, null, name, "Anyorg", "");
+            }
+            return user;
+        } else {
+            log.warn("Could not get a userid from the response");
+            return null;
+        }
     }
 
     @Override
@@ -142,5 +160,20 @@ public class AbstractResource implements Resource, ReportableResource, DigestRes
     @Override
     public boolean isDigestAllowed() {
         return true;
+    }
+
+    @Override
+    public Map<String, OAuth2Provider> getOAuth2Providers() {
+        return TResourceFactory.mapOfOauthProviders;
+    }
+
+    private String getFirstOf(Map map, String... names) {
+        for (String s : names) {
+            Object o = map.get(s);
+            if (o != null) {
+                return o.toString();
+            }
+        }
+        return null;
     }
 }

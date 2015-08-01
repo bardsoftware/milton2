@@ -21,9 +21,14 @@ package com.mycompany;
 import io.milton.common.Path;
 import io.milton.http.ResourceFactory;
 import io.milton.http.values.HrefList;
+import io.milton.resource.OAuth2Provider;
+import io.milton.resource.OAuth2ProviderBean;
 import io.milton.resource.Resource;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * For iCal, start off by opening a calendar at
@@ -40,7 +45,8 @@ import java.util.List;
  */
 public class TResourceFactory implements ResourceFactory {
 
-    private static org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(TResourceFactory.class);
+    private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(TResourceFactory.class);
+    public final static Map<String, OAuth2Provider> mapOfOauthProviders = new HashMap<String, OAuth2Provider>();
     public static final TFolderResource ROOT = new TFolderResource((TFolderResource) null, "http://localhost:8080");
     static TFolderResource users;
     static TFolderResource principals;
@@ -52,9 +58,39 @@ public class TResourceFactory implements ResourceFactory {
         addUser(users, "userA", "password", "userA@somewhere.com", "ACME", "555 1111");
         addUser(users, "userB", "password", "userB@somewhere.com", "ACME", "555 1121");
         addUser(users, "userC", "password", "userC@somewhere.com", "ACME", "555 1131");
+
+        List<String> fbScopes = Arrays.asList("email");
+        
+        OAuth2Provider p = new OAuth2ProviderBean("fb", 
+                "https://graph.facebook.com/oauth/authorize", 
+                "131804060198305",
+                "3acb294b071c9aec86d60ae3daf32a93", 
+                "http://localhost:8080/", 
+                "https://graph.facebook.com/oauth/access_token", 
+                "https://graph.facebook.com/me", 
+                fbScopes);
+        mapOfOauthProviders.put("fb", p);
+        
+        List<String> googleScopes = Arrays.asList( "profile");
+        p = new OAuth2ProviderBean(
+                "google",   // our internal ID
+                "https://accounts.google.com/o/oauth2/auth",  // authorisation url
+                "22595264249-rs4r73t1qk345tn8u75p9qt3lsf3qv2n.apps.googleusercontent.com", // client ID
+                "8GCs-I-LLqxi8UkTQ0qHbYAv", // client secret
+                "http://localhost:8080/", // return url
+                "https://www.googleapis.com/oauth2/v3/token", // URL to call to get an access token from an access code
+                "https://www.googleapis.com/plus/v1/people/me", // URL to call to get profile information
+                googleScopes
+        );
+        mapOfOauthProviders.put("google", p);
     }
 
-    private static void addUser(TFolderResource users, String name, String password, String email, String org, String phone) {
+    
+    public static TCalDavPrincipal getUser(String name) {
+        return (TCalDavPrincipal) users.child(name);
+    }
+    
+    public static TCalDavPrincipal addUser(TFolderResource users, String name, String password, String email, String org, String phone) {
         TCalDavPrincipal user = new TCalDavPrincipal(users, name, password, null, null, null);
         user.setGivenName("joe");
         user.setSurName("blogs" + users.children.size());
@@ -73,12 +109,14 @@ public class TResourceFactory implements ResourceFactory {
         TFolderResource addressBooks = new TFolderResource(user, "abs");
         user.setAddressBookHome(addressBooks);
         TAddressBookResource addressBook1 = new TAddressBookResource(addressBooks, "addressbook");
-        System.out.println("created address book: " + addressBook1.getHref());
+        //System.out.println("created address book: " + addressBook1.getHref());
         addContact(addressBook1, "ed@blah.com", "ed", "ward", "111 222 333", "contact1.vcf");
         addContact(addressBook1, "sam@blah.com", "sam", "smith", "111 222 444", "contact2.vcf");
         addContact(addressBook1, "john@blah.com", "john", "long", "111 222 555", "contact3.vcf");
 
         user.setCalendarHome(calendars);
+        
+        return user;
     }
 
     private static void addContact(TAddressBookResource ab, String email, String givenName, String surName, String phone, String filename) {

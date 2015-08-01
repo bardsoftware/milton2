@@ -1,16 +1,18 @@
 /*
- * Copyright 2013 McEvoy Software Ltd.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright 2014 McEvoy Software Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package io.milton.http.annotated;
 
@@ -24,6 +26,7 @@ import io.milton.resource.AccessControlledResource;
 import io.milton.resource.AccessControlledResource.Priviledge;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -64,16 +67,20 @@ public class AccessControlListAnnotationHandler extends AbstractAnnotationHandle
 			}
 			p = p.getParent();
 		}
-		privs = EnumSet.allOf(Priviledge.class);
+		// BM: this shouldnt be here. We do want to grant all privs at this point, because nothing
+		// explicit was found, but only if there is a current user. And privs should use Priviledge.ALL
+		// rather then allOf(..) because we want to use the more concise, unexpanded, priviledge set
+		//privs = EnumSet.allOf(Priviledge.class);
 		if (curUser != null) {
 			log.info("No explicit AccessControl annotation found, so defaulting to full access for logged in user");
+			privs = new HashSet<Priviledge>();
 			privs.add(Priviledge.ALL);
 		}
 		return privs;
 	}
 
 	public Set<AccessControlledResource.Priviledge> directPrivs(Object curUser, AnnoResource res, Auth auth) {
-		Set<AccessControlledResource.Priviledge> acl = EnumSet.allOf(Priviledge.class);;
+		Set<AccessControlledResource.Priviledge> acl =  EnumSet.noneOf(AccessControlledResource.Priviledge.class);
 		Object source = res.getSource();
 		List<ControllerMethod> availMethods = getMethods(source.getClass());
 		if (availMethods.isEmpty()) {
