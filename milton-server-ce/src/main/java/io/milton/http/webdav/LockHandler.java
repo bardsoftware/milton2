@@ -62,10 +62,10 @@ public class LockHandler implements ExistingEntityHandler {
     try {
       doProcessExistingResource(manager, request, response, resource);
     } catch (IOException e) {
-      log(e);
+      //log(e);
       throw new RuntimeException(e);
     } catch (SAXException e) {
-      log(e);
+      //log(e);
       throw new RuntimeException(e);
     } catch (LockedException e) {
       myResponseHandler.respondLocked(request, response, resource);
