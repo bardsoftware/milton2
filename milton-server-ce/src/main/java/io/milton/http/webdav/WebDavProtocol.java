@@ -19,7 +19,14 @@
 package io.milton.http.webdav;
 
 import io.milton.common.NameSpace;
-import io.milton.http.*;
+import io.milton.http.DateUtils;
+import io.milton.http.Handler;
+import io.milton.http.HandlerHelper;
+import io.milton.http.HttpExtension;
+import io.milton.http.HttpManager;
+import io.milton.http.ResourceHandlerHelper;
+import io.milton.http.UrlAdapter;
+import io.milton.http.XmlWriter;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.NotAuthorizedException;
 import io.milton.http.exceptions.NotFoundException;
@@ -41,6 +48,10 @@ import io.milton.resource.GetableResource;
 import io.milton.resource.PropFindableResource;
 import io.milton.resource.PutableResource;
 import io.milton.resource.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.namespace.QName;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,9 +62,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.xml.namespace.QName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Defines the methods and properties that make up the webdav protocol.
@@ -150,6 +158,7 @@ public class WebDavProtocol implements HttpExtension, PropertySource {
 		handlers.add(propPatchHandler);
 		handlers.add(new CopyHandler(responseHandler, handlerHelper, resourceHandlerHelper, userAgentHelper));
 		handlers.add(new MoveHandler(responseHandler, handlerHelper, resourceHandlerHelper, userAgentHelper));
+    handlers.add(new LockHandler(responseHandler, resourceHandlerHelper));
 
 		// Reports are added by other protocols via addReport
 		reports = new HashMap<String, Report>();
@@ -193,7 +202,6 @@ public class WebDavProtocol implements HttpExtension, PropertySource {
 	public void setProperty(QName name, Object value, Resource r) {
 		throw new UnsupportedOperationException("Not supported. Standard webdav properties are not writable");
 	}
-
 	@Override
 	public PropertyMetaData getPropertyMetaData(QName name, Resource r) {
 		PropertyMetaData propertyMetaData = propertyMap.getPropertyMetaData(name, r);
