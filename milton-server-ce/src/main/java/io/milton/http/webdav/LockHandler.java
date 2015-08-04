@@ -7,6 +7,7 @@ import io.milton.http.LockInfo;
 import io.milton.http.LockInfoSaxHandler;
 import io.milton.http.LockResult;
 import io.milton.http.LockTimeout;
+import io.milton.http.LockToken;
 import io.milton.http.Request;
 import io.milton.http.ResourceHandlerHelper;
 import io.milton.http.Response;
@@ -76,10 +77,24 @@ public class LockHandler implements ExistingEntityHandler {
 
   public void doProcessExistingResource(HttpManager manager, Request request, Response response, Resource resource) throws NotAuthorizedException, BadRequestException, ConflictException, IOException, SAXException, LockedException, PreConditionFailedException {
     LockableResource lockableResource = (LockableResource) resource;
-    if (lockableResource.getCurrentLock() != null) {
-      processLockedResource(manager, request, response, lockableResource);
+    LockToken currentLock = lockableResource.getCurrentLock();
+    if (currentLock != null) {
+      processLockedResource(manager, request, response, lockableResource, currentLock);
     } else {
       processUnlockedResource(manager, request, response, lockableResource);
+    }
+  }
+
+  private static void sendLockFailure(LockResult lockResult, Response response) {
+    switch (lockResult.getFailureReason()) {
+      case ALREADY_LOCKED:
+        response.sendError(Response.Status.SC_LOCKED, "This resource is already locked");
+        break;
+      case PRECONDITION_FAILED:
+        response.sendError(Response.Status.SC_PRECONDITION_FAILED, "");
+        break;
+      default:
+        response.sendError(Response.Status.SC_INTERNAL_SERVER_ERROR, "");
     }
   }
 
@@ -93,14 +108,32 @@ public class LockHandler implements ExistingEntityHandler {
     LockResult lockResult = resource.lock(timeout, lockInfo);
     if (lockResult.isSuccessful()) {
       respondLockStatus(response, lockResult);
+      return;
     }
+    sendLockFailure(lockResult, response);
   }
 
-  private void processLockedResource(HttpManager manager, Request request, Response response, LockableResource resource) {
-
+  private void processLockedResource(HttpManager manager, Request request, Response response, LockableResource resource, LockToken currentLock) throws IOException, SAXException, NotAuthorizedException, PreConditionFailedException {
+    LockInfo lockInfo = LockInfoSaxHandler.parseLockInfo(request);
+    if (lockInfo.type == null || lockInfo.scope == null) {
+      myResponseHandler.respondBadRequest(resource, response, request);
+      return;
+    }
+    if (!request.getIfHeader().equals(currentLock.tokenId)) {
+      response.sendError(Response.Status.SC_PRECONDITION_FAILED, "Token mismatch");
+      return;
+    }
+    LockResult lockResult = resource.refreshLock(request.getIfHeader());
+    if (lockResult.isSuccessful()) {
+      respondLockStatus(response, lockResult);
+      return;
+    }
+    sendLockFailure(lockResult, response);
   }
 
   private void respondLockStatus(Response response, LockResult lockResult) {
+    response.setLockTokenHeader(lockResult.getLockToken().tokenId);
+    response.setContentTypeHeader(Response.XML);
     XmlWriter xmlWriter = new XmlWriter(response.getOutputStream());
     xmlWriter.writeXMLHeader();
     xmlWriter.writeElement(WebDavProtocol.NS_DAV.getPrefix(), WebDavProtocol.DAV_URI, "prop", XmlWriter.Type.OPENING);
