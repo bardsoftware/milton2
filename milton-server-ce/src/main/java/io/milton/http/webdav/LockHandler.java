@@ -16,10 +16,10 @@ import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.LockedException;
 import io.milton.http.exceptions.NotAuthorizedException;
-import io.milton.http.exceptions.NotFoundException;
 import io.milton.http.exceptions.PreConditionFailedException;
 import io.milton.resource.LockableResource;
 import io.milton.resource.Resource;
+import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -28,14 +28,11 @@ import java.io.IOException;
 /**
  * @author dbarashev@bardsoftware.com
  */
-public class LockHandler implements ExistingEntityHandler {
+public class LockHandler extends BaseLockHandler implements ExistingEntityHandler {
   private static final String[] METHODS = new String[]{Request.Method.LOCK.code};
-  private final ResourceHandlerHelper myResourceHandlerHelper;
-  private final WebDavResponseHandler myResponseHandler;
 
   public LockHandler(WebDavResponseHandler responseHandler, ResourceHandlerHelper resourceHandlerHelper) {
-    myResponseHandler = responseHandler;
-    myResourceHandlerHelper = resourceHandlerHelper;
+    super(responseHandler, resourceHandlerHelper);
   }
 
   @Override
@@ -44,37 +41,6 @@ public class LockHandler implements ExistingEntityHandler {
   }
 
   @Override
-  public boolean isCompatible(Resource res) {
-    return res instanceof LockableResource;
-  }
-
-  @Override
-  public void process(HttpManager httpManager, Request request, Response response) throws ConflictException, NotAuthorizedException, BadRequestException, NotFoundException {
-    myResourceHandlerHelper.process(httpManager, request, response, this);
-  }
-
-  @Override
-  public void processResource(HttpManager manager, Request request, Response response, Resource r) throws NotAuthorizedException, ConflictException, BadRequestException {
-    myResourceHandlerHelper.processResource(manager, request, response, r, this);
-  }
-
-  @Override
-  public void processExistingResource(HttpManager manager, Request request, Response response, Resource resource) throws NotAuthorizedException, BadRequestException, ConflictException, NotFoundException {
-    try {
-      doProcessExistingResource(manager, request, response, resource);
-    } catch (IOException e) {
-      //log(e);
-      throw new RuntimeException(e);
-    } catch (SAXException e) {
-      //log(e);
-      throw new RuntimeException(e);
-    } catch (LockedException e) {
-      myResponseHandler.respondLocked(request, response, resource);
-    } catch (PreConditionFailedException e) {
-      myResponseHandler.respondPreconditionFailed(request, response, resource);
-    }
-  }
-
   public void doProcessExistingResource(HttpManager manager, Request request, Response response, Resource resource) throws NotAuthorizedException, BadRequestException, ConflictException, IOException, SAXException, LockedException, PreConditionFailedException {
     LockableResource lockableResource = (LockableResource) resource;
     LockToken currentLock = lockableResource.getCurrentLock();
@@ -119,7 +85,7 @@ public class LockHandler implements ExistingEntityHandler {
       myResponseHandler.respondBadRequest(resource, response, request);
       return;
     }
-    if (!request.getIfHeader().equals(currentLock.tokenId)) {
+    if (!StringUtils.equals(request.getIfHeader(), currentLock.tokenId)) {
       response.sendError(Response.Status.SC_PRECONDITION_FAILED, "Token mismatch");
       return;
     }
@@ -160,6 +126,4 @@ public class LockHandler implements ExistingEntityHandler {
     xmlWriter.close(WebDavProtocol.NS_DAV.getPrefix(), "lockdiscovery");
     xmlWriter.writeElement(WebDavProtocol.NS_DAV.getPrefix(), WebDavProtocol.DAV_URI, "prop", XmlWriter.Type.CLOSING);
   }
-
-
 }
