@@ -131,7 +131,7 @@ public class WebDavProtocol implements HttpExtension, PropertySource {
 		if (enableTextContentProperty) {
 			propertyMap.add(new MiltonExtTextContentProperty());
 		}
-
+    propertyMap.add(new LockDiscoveryProperty());
 		// note valuewriters is also used in DefaultWebDavResponseHandler
 		// if using non-default configuration you should inject the same instance into there
 		// and here
@@ -159,6 +159,7 @@ public class WebDavProtocol implements HttpExtension, PropertySource {
 		handlers.add(new CopyHandler(responseHandler, handlerHelper, resourceHandlerHelper, userAgentHelper));
 		handlers.add(new MoveHandler(responseHandler, handlerHelper, resourceHandlerHelper, userAgentHelper));
     handlers.add(new LockHandler(responseHandler, resourceHandlerHelper));
+    handlers.add(new UnlockHandler(responseHandler, resourceHandlerHelper));
 
 		// Reports are added by other protocols via addReport
 		reports = new HashMap<String, Report>();
