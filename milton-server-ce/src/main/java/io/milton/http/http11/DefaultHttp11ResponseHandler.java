@@ -34,6 +34,8 @@ import io.milton.http.exceptions.NotFoundException;
 import io.milton.resource.BufferingControlResource;
 import io.milton.resource.GetableResource;
 import io.milton.resource.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Date;
@@ -41,9 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -106,7 +105,7 @@ public class DefaultHttp11ResponseHandler implements Http11ResponseHandler, Buff
 	public void respondWithOptions(Resource resource, Response response, Request request, List<String> methodsAllowed) {
 		setRespondCommonHeaders(response, resource, Status.SC_OK, request.getAuthorization());
 		response.setAllowHeader(methodsAllowed);
-		response.setContentLengthHeader((long) 0); // Note that setting content length must be done last for tomcat5	
+		response.setContentLengthHeader((long) 0); // Note that setting content length must be done last for tomcat5
 	}
 
 	@Override

@@ -19,12 +19,14 @@
 package io.milton.http.values;
 
 import io.milton.http.XmlWriter;
+import io.milton.http.webdav.LockTokenValueWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import javax.xml.namespace.QName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Default list of value writers. These are used to format strongly types
@@ -69,7 +71,8 @@ public class ValueWriters {
 		writers.add(new SupportedReportSetWriter());
 		writers.add(new AddressDataTypeListValueWriter());
 		writers.add(new PriviledgeListValueWriter());
-		// ToStringValueWriter is the default value writer and applied when no 
+    writers.add(new LockTokenValueWriter());
+		// ToStringValueWriter is the default value writer and applied when no
 		// other writer is available.
 		writers.add(new ToStringValueWriter());
 	}
