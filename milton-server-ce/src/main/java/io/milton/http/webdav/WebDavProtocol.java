@@ -132,6 +132,7 @@ public class WebDavProtocol implements HttpExtension, PropertySource {
 			propertyMap.add(new MiltonExtTextContentProperty());
 		}
     propertyMap.add(new LockDiscoveryProperty());
+		propertyMap.add(new SupportedLocksProperty());
 		// note valuewriters is also used in DefaultWebDavResponseHandler
 		// if using non-default configuration you should inject the same instance into there
 		// and here
