@@ -75,6 +75,7 @@ public class ValueWriters {
 		// ToStringValueWriter is the default value writer and applied when no
 		// other writer is available.
 		writers.add(new ToStringValueWriter());
+		writers.add(new SupportedLocksValueWriter());
 	}
 
 	/**
