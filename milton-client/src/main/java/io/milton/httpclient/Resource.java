@@ -24,6 +24,9 @@ import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
 import io.milton.http.exceptions.NotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
@@ -32,8 +35,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -87,6 +88,7 @@ public abstract class Resource {
     final List<ResourceListener> listeners = new ArrayList<ResourceListener>();
     private String lockOwner;
     private String lockToken;
+    private SupportedLock supportedLock;
 
     public abstract java.io.File downloadTo(java.io.File destFolder, ProgressListener listener) throws FileNotFoundException, IOException, HttpException, Utils.CancelledException, NotAuthorizedException, BadRequestException;
     private static long count = 0;
@@ -126,6 +128,7 @@ public abstract class Resource {
             lockToken = null;
             lockOwner = null;
         }
+        supportedLock = (SupportedLock) resp.getProperties().get(RespUtils.davName("supportedlock"));
     }
 
     public Resource(Folder parent, String name, String displayName, String href, Date modifiedDate, Date createdDate) {
@@ -190,6 +193,10 @@ public abstract class Resource {
         } catch (URISyntaxException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    public SupportedLock getSupportedLock() {
+        return this.supportedLock;
     }
 
     public void copyTo(Folder folder) throws IOException, HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException {

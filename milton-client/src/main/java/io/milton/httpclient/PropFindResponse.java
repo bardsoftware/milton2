@@ -278,13 +278,4 @@ public class PropFindResponse {
         }
     }
 
-    public static class SupportedLock {
-        public final boolean exclusive;
-        public final boolean shared;
-
-        private SupportedLock(boolean exclusive, boolean shared) {
-            this.exclusive = exclusive;
-            this.shared = shared;
-        }
-    }
 }
