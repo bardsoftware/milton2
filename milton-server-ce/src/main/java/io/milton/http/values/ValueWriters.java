@@ -72,10 +72,10 @@ public class ValueWriters {
 		writers.add(new AddressDataTypeListValueWriter());
 		writers.add(new PriviledgeListValueWriter());
     writers.add(new LockTokenValueWriter());
+		writers.add(new SupportedLocksValueWriter());
 		// ToStringValueWriter is the default value writer and applied when no
 		// other writer is available.
 		writers.add(new ToStringValueWriter());
-		writers.add(new SupportedLocksValueWriter());
 	}
 
 	/**

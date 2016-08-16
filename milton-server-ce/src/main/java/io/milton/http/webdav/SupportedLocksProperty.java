@@ -9,7 +9,7 @@ import io.milton.resource.PropFindableResource;
 public class SupportedLocksProperty implements PropertyMap.StandardProperty<SupportedLocks> {
   @Override
   public String fieldName() {
-    return "supportedlocks";
+    return "supportedlock";
   }
 
   @Override
