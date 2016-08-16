@@ -19,12 +19,18 @@
 package io.milton.httpclient;
 
 import io.milton.http.DateUtils;
-import java.util.*;
-import javax.xml.namespace.QName;
 import org.jdom.Element;
 import org.jdom.Namespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.xml.namespace.QName;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -59,7 +65,7 @@ public class PropFindResponse {
                 Namespace ns = elProp.getNamespace();
                 QName qn = new QName(ns.getURI(), localName, ns.getPrefix());
                 if (localName.equals("resourcetype")) {
-                    colElement = elProp.getChild("collection", RespUtils.NS_DAV);  
+                    colElement = elProp.getChild("collection", RespUtils.NS_DAV);
                 } else if (localName.equals("lockdiscovery")) {
                     Element elActiveLock = elProp.getChild("activelock", RespUtils.NS_DAV);
                     String token;
@@ -78,6 +84,20 @@ public class PropFindResponse {
                     }
                     LockDiscovery lock = new LockDiscovery(owner, token);
                     properties.put(qn, lock);
+                } else if (localName.equals("supportedlock")) {
+                    boolean isWrite = RespUtils.hasChild(elProp, "write");
+                    boolean isExclusive = RespUtils.hasChild(elProp, "exclusive");
+                    boolean isShared = RespUtils.hasChild(elProp, "shared");
+                    if (!isWrite) {
+                        log.warn("<D:write> tag not found in <D:supportedlock>");
+                    } else {
+                        if ((isExclusive || isShared) == false) {
+                            log.warn("Neither <D:exclusive> nor <D:shared> specified");
+                        } else {
+                            SupportedLock supportedLock = new SupportedLock(isExclusive, isShared);
+                            properties.put(qn, supportedLock);
+                        }
+                    }
                 } else {
                     String value = elProp.getText();
                     // Date properties should be adjusted for the difference between server and local time
@@ -145,7 +165,7 @@ public class PropFindResponse {
     public Date getModifiedDate() {
         return (Date) getDavProperty("getlastmodified");
     }
-    
+
     public String getEtag() {
         return (String) getDavProperty("getetag");
     }
@@ -238,7 +258,7 @@ public class PropFindResponse {
 //            lockOwner = null;
 //            lockToken = null;
 //        }
-//    
+//
     public static class LockDiscovery {
 
         private final String owner;
@@ -255,6 +275,16 @@ public class PropFindResponse {
 
         public String getToken() {
             return token;
+        }
+    }
+
+    public static class SupportedLock {
+        public final boolean exclusive;
+        public final boolean shared;
+
+        private SupportedLock(boolean exclusive, boolean shared) {
+            this.exclusive = exclusive;
+            this.shared = shared;
         }
     }
 }
