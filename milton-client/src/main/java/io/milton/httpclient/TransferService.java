@@ -126,7 +126,7 @@ public class TransferService {
         p.addHeader(Request.Header.OVERWRITE.code, "T"); // we always allow overwrites
         if (etagMatch != null) {
             if (etagMatch.getEtag() != null) {
-                p.addHeader(Request.Header.IF_MATCH.code, etagMatch.getEtag());                
+                p.addHeader(Request.Header.IF.code, String.format("<%s> (<%s>)", encodedUrl, etagMatch.getEtag()));
             } else {
                 p.addHeader(Request.Header.IF_NONE_MATCH.code, "*"); // this will fail if there is a file with the same name
             }
