@@ -11,12 +11,23 @@ package io.milton.httpclient;
  */
 public class IfMatchCheck {
     private final String etag;
+    private final boolean setIfMatch;
+    private final boolean setIf;
 
     public IfMatchCheck(String etag) {
-        this.etag = etag;
+    	this(etag, true, false);
     }
 
+    public IfMatchCheck(String etag, boolean setIfMatch, boolean setIf) {
+        this.etag = etag;
+        this.setIfMatch = setIfMatch;
+        this.setIf = setIf;
+	}
     public String getEtag() {
         return etag;
     }        
+
+    public boolean isSetIfMatch() { return this.setIfMatch; }
+
+    public boolean isSetIf() { return this.setIf; }
 }
